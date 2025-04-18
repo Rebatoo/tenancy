@@ -20,7 +20,7 @@ class TenantService
     private function generateUniqueDatabaseName($tenantId)
     {
         do {
-            $databaseName = 'tenant_' . $tenantId . '_' . Str::random(5);
+            $databaseName = 'tenant_' . $tenantId;
             $exists = DB::select("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?", [$databaseName]);
         } while (!empty($exists));
 
