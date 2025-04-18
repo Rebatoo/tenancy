@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use Stancl\Tenancy\Facades\Tenancy;
 use App\Models\Tenant;
 use App\Models\PendingTenant;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use App\Services\TenantService;
+use Illuminate\Support\Facades\Schema;
 
 class TenantController extends Controller
 {
@@ -32,7 +34,13 @@ class TenantController extends Controller
         $tenant = Tenant::where('id', $tenant)->firstOrFail();
         $tenantInfo = PendingTenant::where('name', $tenant->id)->first();
         
-        return view('tenant.dashboard', compact('tenant', 'tenantInfo'));
+        // Check if employees table exists
+        $employees = collect([]);
+        if (Schema::hasTable('employees')) {
+            $employees = Employee::latest()->paginate(10);
+        }
+        
+        return view('tenant.dashboard', compact('tenant', 'tenantInfo', 'employees'));
     }
 
     // Method to create a new tenant
