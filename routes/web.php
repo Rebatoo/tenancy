@@ -16,7 +16,7 @@ Route::get('/register-tenant', [PendingTenantController::class, 'create']);
 Route::post('/register-tenant', [PendingTenantController::class, 'store']);
 
 // Admin routes
-Route::middleware(['auth', TenantApproved::class])->group(function () {
+Route::middleware([TenantApproved::class])->group(function () {
     Route::get('/admin/pending-tenants', [PendingTenantController::class, 'index']);
     Route::post('/admin/approve-tenant/{id}', [PendingTenantController::class, 'approve'])->name('tenants.approve');
 });
@@ -24,11 +24,12 @@ Route::middleware(['auth', TenantApproved::class])->group(function () {
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/logout', [AuthController::class, 'logout']);
 
 // Tenant routes
 Route::prefix('tenant/{tenant}')->group(function () {
     Route::get('/', [TenantController::class, 'showTenant'])->name('tenant.show');
-    Route::middleware(['auth', TenantApproved::class])->group(function () {
+    Route::middleware([TenantApproved::class])->group(function () {
         Route::get('/dashboard', [TenantController::class, 'dashboard'])->name('tenant.dashboard');
     });
 });

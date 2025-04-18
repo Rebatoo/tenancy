@@ -61,7 +61,52 @@
                         </li>
                     </ul>
                 </div>
+                <?php
+// Database connection credentials
+$host = '127.0.0.1';
+$user = 'root';
+$password = ''; // Change this if your root has a password
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $dbName = $_POST['database_name'] ?? '';
+
+    if (!empty($dbName)) {
+        // Create connection
+        $conn = new mysqli($host, $user, $password);
+
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        // Create database
+        $sql = "CREATE DATABASE `$dbName`";
+        if ($conn->query($sql) === TRUE) {
+            echo "Database '$dbName' created successfully.";
+        } else {
+            echo "Error creating database: " . $conn->error;
+        }
+
+        $conn->close();
+    } else {
+        echo "Please provide a database name.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Database</title>
+</head>
+<body>
+    <form method="POST">
+        <label>Database Name:</label>
+        <input type="text" name="database_name" required>
+        <button type="submit">Create</button>
+    </form>
+</body>
+</html>
             </main>
         </div>
 

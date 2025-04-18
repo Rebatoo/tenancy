@@ -16,7 +16,7 @@
         @foreach ($pendingTenants as $tenant)
             <li>
                 {{ $tenant->name }} ({{ $tenant->domain }})
-                <form method="POST" action="/admin/approve-tenant/{{ $tenant->id }}" style="display:inline;">
+                <form method="POST" action="/admin/approve-tenant/{{ $tenant->id }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to approve this tenant?');">
                     @csrf
                     <button type="submit">Approve</button>
                 </form>

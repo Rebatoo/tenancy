@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class PendingTenant extends Authenticatable
+class PendingTenant extends Model
 {
     protected $fillable = [
         'name',
@@ -19,14 +18,4 @@ class PendingTenant extends Authenticatable
     protected $casts = [
         'approved' => 'boolean',
     ];
-
-    public function getAuthIdentifierName()
-    {
-        return 'email';
-    }
-
-    public function getAuthIdentifier()
-    {
-        return $this->email;
-    }
 }

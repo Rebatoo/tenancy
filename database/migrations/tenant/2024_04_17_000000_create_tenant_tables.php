@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pending_tenants', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // Company name
-            $table->string('email')->unique();    
-            $table->string('location');
-            $table->string('domain')->unique();
-            $table->string('contact_number');
-            $table->boolean('approved')->default(false);
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -28,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pending_tenants');
+        Schema::dropIfExists('users');
     }
-};
+}; 
