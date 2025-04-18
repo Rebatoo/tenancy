@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PendingTenant;
 use App\Models\Tenant;
+use App\Models\Domain; // Add this import
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -92,18 +93,48 @@ class PendingTenantController extends Controller
                 'tenant_name' => $pending->name,
             ]);
 
-            // Approve the tenant using TenantService
-            $this->tenantService->approveTenant($pending);
+            // Ensure company_name is set
+            if (empty($pending->name)) {
+                throw new \RuntimeException('The company_name attribute is missing in the pending tenant.');
+            }
 
-            // Mark as approved
-            $pending->approved = true;
-            $pending->save();
-
-            Log::info('Tenant approved', [
-                'tenant_id' => $pending->id,
+            // Create a new tenant in the tenants table
+            $tenant = Tenant::create([
+                'id' => $pending->name, // Use the company name as the tenant ID
+                'data' => [
+                    'tenancy_db_name' => 'tenant_' . strtolower($pending->name),
+                    'company_name' => $pending->name, // Explicitly set company_name
+                ],
             ]);
 
-            return back()->with('success', 'Tenant approved!');
+            Log::info('Tenant created successfully', ['tenant' => $tenant->toArray()]);
+
+            // Create a new domain entry in the domains table
+            $domain = Domain::create([
+                'domain' => $pending->domain,
+                'tenant_id' => $tenant->id,
+            ]);
+
+            Log::info('Domain created successfully', ['domain' => $domain->toArray()]);
+
+            // Approve the tenant and create the database
+            $this->tenantService->approveTenant($tenant);
+
+            // Mark the pending tenant as approved
+            $pending->update([
+                'approved' => true,
+                'database_name' => 'tenant_' . strtolower($pending->name),
+            ]);
+
+            Log::info('Tenant approved successfully', [
+                'tenant_id' => $tenant->id,
+                'domain' => $domain->domain,
+            ]);
+
+            return back()->with('success', 'Tenant approved and added to the system!');
+        } catch (\RuntimeException $e) {
+            Log::error('Runtime error during approval: ' . $e->getMessage());
+            return back()->with('error', 'Runtime error: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Approval error: ' . $e->getMessage());
             return back()->with('error', 'Something went wrong during approval! Error: ' . $e->getMessage());

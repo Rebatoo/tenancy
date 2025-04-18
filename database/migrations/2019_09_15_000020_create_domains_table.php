@@ -18,10 +18,14 @@ class CreateDomainsTable extends Migration
         Schema::create('domains', function (Blueprint $table) {
             $table->increments('id');
             $table->string('domain', 255)->unique();
-            $table->string('tenant_id');
-
+            $table->string('tenant_id'); // Ensure this matches the type of the `id` column in `tenants`
             $table->timestamps();
-            $table->foreign('tenant_id')->references('id')->on('tenants')->onUpdate('cascade')->onDelete('cascade');
+
+            $table->foreign('tenant_id')
+                ->references('id')
+                ->on('tenants')
+                ->onUpdate('cascade')
+                ->onDelete('cascade');
         });
     }
 

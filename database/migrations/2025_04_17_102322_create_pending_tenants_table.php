@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('domain')->unique();
             $table->string('contact_number');
             $table->boolean('approved')->default(false);
+            $table->string('database_name')->nullable(); // New column for database name
             $table->timestamps();
         });
     }

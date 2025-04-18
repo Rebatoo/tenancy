@@ -7,13 +7,14 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\DatabaseConfig;
 use Stancl\Tenancy\Database\DatabaseManager;
+use Illuminate\Support\Facades\Log;
 
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     protected $fillable = [
         'id',
-
         'data',
+        'company_name', // Add company_name to fillable attributes
     ];
 
     protected $casts = [
@@ -49,12 +50,19 @@ class Tenant extends BaseTenant implements TenantWithDatabase
         parent::boot();
 
         static::creating(function ($tenant) {
-            if (!isset($tenant->data)) {
-                $tenant->data = [];
+            $data = $tenant->data ?? []; // Retrieve the data attribute or initialize it as an empty array
+
+            if (empty($data['company_name'])) { // Check company_name in the data array
+                $data['company_name'] = $tenant->id; // Fallback to tenant ID if company_name is missing
             }
-            if (empty($tenant->company_name)) {
+
+            if (empty($data['company_name'])) {
                 throw new \RuntimeException('The company_name attribute must be set when creating a tenant.');
             }
+
+            $tenant->data = $data; // Set the modified data back to the attribute
+
+            Log::info('Creating tenant', ['tenant' => $tenant->toArray()]);
         });
     }
 
