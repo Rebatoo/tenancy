@@ -14,14 +14,17 @@ use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Database\DatabaseManager;
 use Stancl\Tenancy\Contracts\TenantDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
+use App\Services\TenantService;
 
 class PendingTenantController extends Controller
 {
     protected $databaseManager;
+    protected $tenantService;
 
-    public function __construct(TenantDatabaseManager $databaseManager)
+    public function __construct(TenantDatabaseManager $databaseManager, TenantService $tenantService)
     {
         $this->databaseManager = $databaseManager;
+        $this->tenantService = $tenantService;
     }
 
     public function create()
@@ -78,65 +81,29 @@ class PendingTenantController extends Controller
     {
         try {
             $pending = PendingTenant::findOrFail($id);
-    
+
             // Check if tenant already exists
             if (Tenant::where('id', $pending->name)->exists()) {
                 return back()->with('error', 'Tenant already exists!');
             }
-    
-            // Generate a unique database name
-            $dbName = 'tenant_' . Str::slug($pending->name, '_');
-    
+
             Log::info('Starting tenant approval process', [
                 'pending_id' => $id,
                 'tenant_name' => $pending->name,
-                'db_name' => $dbName
             ]);
-    
-            // Create the tenant
-            $tenant = new Tenant();
-            $tenant->id = $pending->name;
-            $tenant->tenancy_db_name = $dbName; // Set the unique DB name here
-            $tenant->data = [
-                'tenancy_db_name' => $dbName, // Ensure this matches the unique DB name
-                'company_name' => $pending->name, // Set the company_name attribute
-            ];
-            $tenant->company_name = $pending->name; // Explicitly set company_name
-            $tenant->save();
-    
-            // Create the domain for the tenant
-            $tenant->domains()->create([
-                'domain' => $pending->domain,
-            ]);
-    
-            Log::info('Tenant and domain created', [
-                'tenant' => $tenant->toArray(),
-                'domain' => $pending->domain
-            ]);
-    
-            // Create the database manually
-            Log::info('Creating database manually: ' . $dbName);
-            $this->createDatabaseManually($dbName);
-            Log::info('Database created successfully');
-    
-            // Remove database migration step
-            // Log::info('Migrating database');
-            // Artisan::call('tenants:migrate', [
-            //     '--tenants' => [$tenant->id], // Specify the tenant ID for migrations
-            // ]);
-            // Log::info('Database migrated successfully');
-    
+
+            // Approve the tenant using TenantService
+            $this->tenantService->approveTenant($pending);
+
             // Mark as approved
             $pending->approved = true;
             $pending->save();
-    
+
             Log::info('Tenant approved', [
-                'tenant_id' => $tenant->id,
-                'db_name' => $dbName,
-                'domain' => $pending->domain
+                'tenant_id' => $pending->id,
             ]);
-    
-            return back()->with('success', 'Tenant approved! Database created: ' . $dbName);
+
+            return back()->with('success', 'Tenant approved!');
         } catch (\Exception $e) {
             Log::error('Approval error: ' . $e->getMessage());
             return back()->with('error', 'Something went wrong during approval! Error: ' . $e->getMessage());
