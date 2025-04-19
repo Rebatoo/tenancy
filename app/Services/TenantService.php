@@ -35,6 +35,40 @@ class TenantService
                 $table->timestamps();
             });
             
+            // Create the workers table (alias for employees)
+            Schema::create('workers', function ($table) {
+                $table->id();
+                $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
+                $table->timestamps();
+            });
+            
+            // Create the customers table
+            Schema::create('customers', function ($table) {
+                $table->id();
+                $table->string('name');
+                $table->string('phone')->nullable();
+                $table->string('email')->nullable();
+                $table->text('address')->nullable();
+                $table->timestamps();
+            });
+            
+            // Create the worker_logs table
+            Schema::create('worker_logs', function ($table) {
+                $table->id();
+                $table->foreignId('worker_id')->constrained('workers');
+                $table->foreignId('customer_id')->nullable()->constrained('customers');
+                $table->string('item_name');
+                $table->integer('quantity');
+                $table->decimal('weight_kg', 5, 2);
+                $table->string('detergent_type');
+                $table->decimal('detergent_used', 5, 2);
+                $table->enum('detergent_unit', ['g', 'kg']);
+                $table->date('washed_at');
+                $table->decimal('payment', 8, 2);
+                $table->text('remarks')->nullable();
+                $table->timestamps();
+            });
+            
             // Switch back to the central database
             DB::statement("USE " . config('database.connections.mysql.database'));
             
