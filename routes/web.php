@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use App\Http\Middleware\TenantApproved;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Middleware\InitializeTenancyByPath;
 
 // Central domain routes
 Route::get('/', function () {
@@ -27,9 +29,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/logout', [AuthController::class, 'logout']);
 
 // Tenant routes
-Route::prefix('tenant/{tenant}')->group(function () {
+Route::prefix('tenant/{tenant}')->middleware([InitializeTenancyByPath::class])->group(function () {
     Route::get('/', [TenantController::class, 'showTenant'])->name('tenant.show');
     Route::middleware([TenantApproved::class])->group(function () {
         Route::get('/dashboard', [TenantController::class, 'dashboard'])->name('tenant.dashboard');
+        
+        // Employee routes within tenant context
+        Route::resource('employees', EmployeeController::class);
     });
 });

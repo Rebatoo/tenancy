@@ -20,19 +20,25 @@ class TenantController extends Controller
     // Display tenant details
     public function showTenant($tenant)
     {
-        $tenant = Tenant::where('id', $tenant)->firstOrFail();
-        $tenantInfo = PendingTenant::where('name', $tenant->id)->first();
+        $tenantModel = Tenant::where('id', $tenant)->firstOrFail();
+        $tenantInfo = PendingTenant::where('name', $tenantModel->id)->first();
         
-        return view('tenant.show', compact('tenant', 'tenantInfo'));
+        // Initialize tenancy for this tenant
+        Tenancy::initialize($tenantModel);
+        
+        return view('tenant.show', compact('tenantModel', 'tenantInfo'));
     }
 
     // Tenant dashboard
     public function dashboard($tenant)
     {
-        $tenant = Tenant::where('id', $tenant)->firstOrFail();
-        $tenantInfo = PendingTenant::where('name', $tenant->id)->first();
+        $tenantModel = Tenant::where('id', $tenant)->firstOrFail();
+        $tenantInfo = PendingTenant::where('name', $tenantModel->id)->first();
         
-        return view('tenant.dashboard', compact('tenant', 'tenantInfo'));
+        // Initialize tenancy for this tenant
+        Tenancy::initialize($tenantModel);
+        
+        return view('tenant.dashboard', compact('tenantModel', 'tenantInfo'));
     }
 
     // Method to create a new tenant

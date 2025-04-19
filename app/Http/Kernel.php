@@ -63,8 +63,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         // Add the custom middleware here
         'tenant.approved' => \App\Http\Middleware\TenantApproved::class,
-        
-
-
+        'tenant.initialize' => \App\Http\Middleware\InitializeTenancyByPath::class,
     ];
 }
