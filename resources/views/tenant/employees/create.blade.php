@@ -58,7 +58,7 @@
             </div>
         @endif
         
-        <form action="{{ route('employees.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('employees.store', ['tenant' => request()->route('tenant')]) }}" method="POST" enctype="multipart/form-data">
             @csrf
             
             <div class="row mb-3">
@@ -149,7 +149,7 @@
             </div>
             
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a href="{{ route('employees.index') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                <a href="{{ route('employees.index', ['tenant' => request()->route('tenant')]) }}" class="btn btn-secondary me-md-2">Cancel</a>
                 <button type="submit" class="btn btn-primary">Save Employee</button>
             </div>
         </form>
