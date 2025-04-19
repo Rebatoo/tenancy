@@ -6,6 +6,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Facades\Tenancy;
 use App\Models\Tenant;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class InitializeTenancyByPath
 {
@@ -34,6 +36,14 @@ class InitializeTenancyByPath
                 
                 // Store tenant email in session for views
                 session(['tenant_email' => $tenant->data['email'] ?? 'No email']);
+                
+                // Set the database name for the tenant connection
+                $databaseName = 'tenant_' . $tenantId;
+                Config::set('database.connections.tenant.database', $databaseName);
+                
+                // Reconnect to the tenant database
+                DB::purge('tenant');
+                DB::reconnect('tenant');
             }
         }
         

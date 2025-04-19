@@ -15,7 +15,8 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employees = DB::table('employees')->get();
+        // Use the tenant's database connection
+        $employees = DB::connection('tenant')->table('employees')->get();
         return view('tenant.employees.index', compact('employees'));
     }
 
@@ -37,7 +38,7 @@ class EmployeeController extends Controller
             'name' => 'required|string|max:255',
             'job_title' => 'nullable|string|max:255',
             'role' => 'required|string|max:255',
-            'email' => 'required|email|unique:employees,email',
+            'email' => 'required|email',
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'gender' => 'nullable|in:Male,Female,Other',
@@ -48,6 +49,12 @@ class EmployeeController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
+        // Check if email is unique in the tenant's database
+        $emailExists = DB::connection('tenant')->table('employees')->where('email', $validated['email'])->exists();
+        if ($emailExists) {
+            return back()->withErrors(['email' => 'The email has already been taken.'])->withInput();
+        }
+
         // Handle photo upload if provided
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
@@ -56,10 +63,10 @@ class EmployeeController extends Controller
             $validated['photo'] = $path;
         }
 
-        // Insert the employee into the database
-        DB::table('employees')->insert($validated);
+        // Insert the employee into the tenant's database
+        DB::connection('tenant')->table('employees')->insert($validated);
 
-        return redirect()->route('employees.index')
+        return redirect()->route('employees.index', ['tenant' => request()->route('tenant')])
             ->with('success', 'Employee created successfully.');
     }
 
@@ -68,10 +75,11 @@ class EmployeeController extends Controller
      */
     public function show($id)
     {
-        $employee = DB::table('employees')->find($id);
+        // Use the tenant's database connection
+        $employee = DB::connection('tenant')->table('employees')->find($id);
         
         if (!$employee) {
-            return redirect()->route('employees.index')
+            return redirect()->route('employees.index', ['tenant' => request()->route('tenant')])
                 ->with('error', 'Employee not found.');
         }
         
@@ -83,10 +91,11 @@ class EmployeeController extends Controller
      */
     public function edit($id)
     {
-        $employee = DB::table('employees')->find($id);
+        // Use the tenant's database connection
+        $employee = DB::connection('tenant')->table('employees')->find($id);
         
         if (!$employee) {
-            return redirect()->route('employees.index')
+            return redirect()->route('employees.index', ['tenant' => request()->route('tenant')])
                 ->with('error', 'Employee not found.');
         }
         
@@ -98,19 +107,12 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $employee = DB::table('employees')->find($id);
-        
-        if (!$employee) {
-            return redirect()->route('employees.index')
-                ->with('error', 'Employee not found.');
-        }
-        
         // Validate the request
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'job_title' => 'nullable|string|max:255',
             'role' => 'required|string|max:255',
-            'email' => 'required|email|unique:employees,email,' . $id,
+            'email' => 'required|email',
             'phone' => 'required|string|max:20',
             'address' => 'nullable|string|max:500',
             'gender' => 'nullable|in:Male,Female,Other',
@@ -121,23 +123,28 @@ class EmployeeController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
+        // Check if email is unique in the tenant's database (excluding the current employee)
+        $emailExists = DB::connection('tenant')->table('employees')
+            ->where('email', $validated['email'])
+            ->where('id', '!=', $id)
+            ->exists();
+            
+        if ($emailExists) {
+            return back()->withErrors(['email' => 'The email has already been taken.'])->withInput();
+        }
+
         // Handle photo upload if provided
         if ($request->hasFile('photo')) {
-            // Delete old photo if exists
-            if ($employee->photo) {
-                Storage::disk('public')->delete($employee->photo);
-            }
-            
             $photo = $request->file('photo');
             $filename = time() . '_' . Str::random(10) . '.' . $photo->getClientOriginalExtension();
             $path = $photo->storeAs('employee_photos', $filename, 'public');
             $validated['photo'] = $path;
         }
 
-        // Update the employee in the database
-        DB::table('employees')->where('id', $id)->update($validated);
+        // Update the employee in the tenant's database
+        DB::connection('tenant')->table('employees')->where('id', $id)->update($validated);
 
-        return redirect()->route('employees.index')
+        return redirect()->route('employees.index', ['tenant' => request()->route('tenant')])
             ->with('success', 'Employee updated successfully.');
     }
 
@@ -146,22 +153,10 @@ class EmployeeController extends Controller
      */
     public function destroy($id)
     {
-        $employee = DB::table('employees')->find($id);
-        
-        if (!$employee) {
-            return redirect()->route('employees.index')
-                ->with('error', 'Employee not found.');
-        }
-        
-        // Delete photo if exists
-        if ($employee->photo) {
-            Storage::disk('public')->delete($employee->photo);
-        }
-        
-        // Delete the employee from the database
-        DB::table('employees')->where('id', $id)->delete();
+        // Use the tenant's database connection
+        DB::connection('tenant')->table('employees')->where('id', $id)->delete();
 
-        return redirect()->route('employees.index')
+        return redirect()->route('employees.index', ['tenant' => request()->route('tenant')])
             ->with('success', 'Employee deleted successfully.');
     }
 } 
